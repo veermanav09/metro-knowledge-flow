@@ -12,19 +12,23 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const menuItems = [
-  { icon: Upload, label: "Document Ingestion", description: "Upload & Process", active: false },
-  { icon: FileText, label: "Knowledge Base", description: "Search Archive", active: false },
-  { icon: Bot, label: "AI Assistant", description: "Ask Questions", active: false },
-  { icon: BarChart3, label: "Analytics", description: "Insights & Reports", active: false },
-  { icon: Users, label: "Department Routing", description: "Team Distribution", active: true },
-  { icon: Shield, label: "Compliance", description: "Regulatory Tracking", active: false },
-  { icon: AlertCircle, label: "Alerts", description: "Priority Notifications", active: false },
-  { icon: Languages, label: "Translation", description: "English ⇄ Malayalam", active: false },
+  { icon: Upload, label: "Document Ingestion", description: "Upload & Process", path: "/upload" },
+  { icon: FileText, label: "Knowledge Base", description: "Search Archive", path: "/knowledge" },
+  { icon: Bot, label: "AI Assistant", description: "Ask Questions", path: "/assistant" },
+  { icon: BarChart3, label: "Analytics", description: "Insights & Reports", path: "/analytics" },
+  { icon: Users, label: "Department Routing", description: "Team Distribution", path: "/" },
+  { icon: Shield, label: "Compliance", description: "Regulatory Tracking", path: "/compliance" },
+  { icon: AlertCircle, label: "Alerts", description: "Priority Notifications", path: "/alerts" },
+  { icon: Languages, label: "Translation", description: "English ⇄ Malayalam", path: "/translation" },
 ];
 
 export const Sidebar = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   return (
     <aside className="w-64 bg-card shadow-card border-r border-border h-screen overflow-y-auto">
       <div className="p-4">
@@ -32,8 +36,9 @@ export const Sidebar = () => {
           {menuItems.map((item, index) => (
             <Button
               key={index}
-              variant={item.active ? "kmrl" : "ghost"}
+              variant={location.pathname === item.path ? "kmrl" : "ghost"}
               className="w-full justify-start h-auto p-3 text-left"
+              onClick={() => navigate(item.path)}
             >
               <item.icon className="h-5 w-5 mr-3 shrink-0" />
               <div className="flex-1 min-w-0">
