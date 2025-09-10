@@ -8,11 +8,14 @@ import {
   Bot,
   AlertCircle,
   Settings,
-  Languages
+  Languages,
+  LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useLocation, useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/components/ui/use-toast";
 
 const menuItems = [
   { icon: Upload, label: "Document Ingestion", description: "Upload & Process", path: "/upload" },
@@ -28,6 +31,25 @@ const menuItems = [
 export const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to log out",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+      // Force page refresh to reset authentication state
+      window.location.reload();
+    }
+  };
 
   return (
     <aside className="w-64 bg-card shadow-card border-r border-border h-screen overflow-y-auto">
@@ -37,7 +59,7 @@ export const Sidebar = () => {
             <Button
               key={index}
               variant={location.pathname === item.path ? "kmrl" : "ghost"}
-              className="w-full justify-start h-auto p-3 text-left"
+              className="w-full justify-start h-auto p-3 text-left animate-click animate-hover-lift"
               onClick={() => navigate(item.path)}
             >
               <item.icon className="h-5 w-5 mr-3 shrink-0" />
@@ -49,9 +71,9 @@ export const Sidebar = () => {
           ))}
         </div>
 
-        <Card className="mt-6 p-4 bg-gradient-ocean">
+        <Card className="mt-6 p-4 bg-gradient-ocean animate-hover-lift">
           <div className="text-center">
-            <Bot className="h-8 w-8 mx-auto mb-2 text-primary" />
+            <Bot className="h-8 w-8 mx-auto mb-2 text-primary animate-pulse-glow" />
             <h3 className="font-semibold text-sm mb-1">AI Processing</h3>
             <p className="text-xs text-muted-foreground mb-3">
               Currently processing 12 documents
@@ -63,16 +85,27 @@ export const Sidebar = () => {
           </div>
         </Card>
 
-        <div className="mt-6 p-3 bg-muted/30 rounded-lg">
+        <div className="mt-6 p-3 bg-muted/30 rounded-lg animate-hover-lift">
           <div className="flex items-center text-xs text-muted-foreground mb-2">
             <Languages className="h-3 w-3 mr-1" />
             Language Support
           </div>
           <div className="flex flex-wrap gap-1">
-            <span className="px-2 py-1 bg-success/20 text-success text-xs rounded">EN</span>
-            <span className="px-2 py-1 bg-kmrl-blue/20 text-kmrl-blue text-xs rounded">മലയാളം</span>
-            <span className="px-2 py-1 bg-warning/20 text-warning text-xs rounded">Mixed</span>
+            <span className="px-2 py-1 bg-success/20 text-success text-xs rounded animate-click">EN</span>
+            <span className="px-2 py-1 bg-kmrl-blue/20 text-kmrl-blue text-xs rounded animate-click">മലയാളം</span>
+            <span className="px-2 py-1 bg-warning/20 text-warning text-xs rounded animate-click">Mixed</span>
           </div>
+        </div>
+
+        <div className="mt-6 space-y-2">
+          <Button
+            variant="outline"
+            className="w-full justify-start animate-click animate-hover-lift"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
+          </Button>
         </div>
       </div>
     </aside>
