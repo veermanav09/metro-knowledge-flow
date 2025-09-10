@@ -14,7 +14,193 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      compliance_items: {
+        Row: {
+          assigned_department: string | null
+          assigned_user: string | null
+          created_at: string
+          description: string | null
+          document_id: string | null
+          due_date: string | null
+          id: string
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_department?: string | null
+          assigned_user?: string | null
+          created_at?: string
+          description?: string | null
+          document_id?: string | null
+          due_date?: string | null
+          id?: string
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_department?: string | null
+          assigned_user?: string | null
+          created_at?: string
+          description?: string | null
+          document_id?: string | null
+          due_date?: string | null
+          id?: string
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_items_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_routes: {
+        Row: {
+          acknowledged_at: string | null
+          department: string
+          document_id: string
+          id: string
+          priority: number | null
+          reason: string | null
+          routed_at: string
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          department: string
+          document_id: string
+          id?: string
+          priority?: number | null
+          reason?: string | null
+          routed_at?: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          department?: string
+          document_id?: string
+          id?: string
+          priority?: number | null
+          reason?: string | null
+          routed_at?: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_routes_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          compliance_items: string[] | null
+          content: string | null
+          created_at: string
+          created_by: string | null
+          deadlines: string[] | null
+          department: string | null
+          document_type: string | null
+          file_url: string | null
+          id: string
+          key_points: string[] | null
+          original_language: string | null
+          priority: string | null
+          source: string | null
+          status: string | null
+          summary: string | null
+          title: string
+          translated_content: string | null
+          updated_at: string
+        }
+        Insert: {
+          compliance_items?: string[] | null
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          deadlines?: string[] | null
+          department?: string | null
+          document_type?: string | null
+          file_url?: string | null
+          id?: string
+          key_points?: string[] | null
+          original_language?: string | null
+          priority?: string | null
+          source?: string | null
+          status?: string | null
+          summary?: string | null
+          title: string
+          translated_content?: string | null
+          updated_at?: string
+        }
+        Update: {
+          compliance_items?: string[] | null
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          deadlines?: string[] | null
+          department?: string | null
+          document_type?: string | null
+          file_url?: string | null
+          id?: string
+          key_points?: string[] | null
+          original_language?: string | null
+          priority?: string | null
+          source?: string | null
+          status?: string | null
+          summary?: string | null
+          title?: string
+          translated_content?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          department: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          language_preference: string | null
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          language_preference?: string | null
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          language_preference?: string | null
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
