@@ -11,6 +11,11 @@ import Index from "./pages/Index";
 import Upload from "./pages/Upload";
 import Knowledge from "./pages/Knowledge";
 import Assistant from "./pages/Assistant";
+import Compliance from "./pages/Compliance";
+import Alerts from "./pages/Alerts";
+import Translation from "./pages/Translation";
+import Analytics from "./pages/Analytics";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -74,6 +79,11 @@ const App = () => {
             <Route path="/upload" element={<Upload />} />
             <Route path="/knowledge" element={<Knowledge />} />
             <Route path="/assistant" element={<Assistant />} />
+            <Route path="/compliance" element={<Compliance />} />
+            <Route path="/alerts" element={<Alerts />} />
+            <Route path="/translation" element={<Translation />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/profile" element={<Profile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

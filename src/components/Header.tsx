@@ -1,8 +1,10 @@
 import { Bell, Search, User, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
 
 export const Header = () => {
+  const navigate = useNavigate();
   return (
     <header className="bg-card shadow-card border-b border-border">
       <div className="container mx-auto px-4 py-4">
@@ -37,13 +39,23 @@ export const Header = () => {
               <p className="text-sm font-medium text-foreground">സ്വാഗതം / Welcome</p>
               <p className="text-xs text-muted-foreground">Station Controller</p>
             </div>
-            <Button variant="ghost" size="icon" className="relative">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="relative animate-click" 
+              onClick={() => navigate('/alerts')}
+            >
               <Bell className="h-5 w-5" />
               <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
                 3
               </span>
             </Button>
-            <Button variant="ghost" size="icon">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="animate-click"
+              onClick={() => navigate('/profile')}
+            >
               <User className="h-5 w-5" />
             </Button>
           </div>
