@@ -7,11 +7,93 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { User, Mail, MapPin, Phone, Calendar, Settings, Camera } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { User, Mail, MapPin, Phone, Calendar, Settings, Camera, LogOut, Edit3, Save, X, Bell, Shield, Globe, FileText, BarChart3 } from "lucide-react";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+import { useState } from "react";
 
 const Profile = () => {
   const profileRef = useScrollReveal(0.1);
+  const { toast } = useToast();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    fullName: "Veer Manav",
+    employeeId: "KMRL-2024-001",
+    email: "veermanav.09@gmail.com",
+    phone: "+91 98765 43210",
+    department: "operations",
+    position: "Station Controller",
+    language: "english",
+    timezone: "ist"
+  });
+
+  // Settings state
+  const [settings, setSettings] = useState({
+    emailNotifications: true,
+    pushNotifications: false,
+    documentAlerts: true,
+    weeklyReports: true,
+    darkMode: false
+  });
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to log out",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Logged out successfully",
+        description: "You have been signed out of your account.",
+      });
+      window.location.reload();
+    }
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    // Simulate API call
+    setTimeout(() => {
+      setIsSaving(false);
+      setIsEditing(false);
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been saved successfully.",
+      });
+    }, 1000);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    // Reset form data to original values
+    setFormData({
+      fullName: "Veer Manav",
+      employeeId: "KMRL-2024-001",
+      email: "veermanav.09@gmail.com",
+      phone: "+91 98765 43210",
+      department: "operations",
+      position: "Station Controller",
+      language: "english",
+      timezone: "ist"
+    });
+  };
+
+  const updateFormData = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const updateSettings = (setting: string, value: boolean) => {
+    setSettings(prev => ({ ...prev, [setting]: value }));
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -33,10 +115,45 @@ const Profile = () => {
                   Manage your account settings and preferences
                 </p>
               </div>
-              <Button className="animate-click animate-hover-lift">
-                <Settings className="h-4 w-4 mr-2" />
-                Account Settings
-              </Button>
+              <div className="flex items-center space-x-3">
+                {!isEditing ? (
+                  <Button 
+                    onClick={() => setIsEditing(true)}
+                    className="animate-click animate-hover-lift"
+                    variant="outline"
+                  >
+                    <Edit3 className="h-4 w-4 mr-2" />
+                    Edit Profile
+                  </Button>
+                ) : (
+                  <div className="flex space-x-2">
+                    <Button 
+                      onClick={handleSave}
+                      disabled={isSaving}
+                      className="animate-click animate-hover-lift"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      {isSaving ? "Saving..." : "Save Changes"}
+                    </Button>
+                    <Button 
+                      onClick={handleCancel}
+                      variant="outline"
+                      className="animate-click animate-hover-lift"
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+                <Button 
+                  onClick={handleLogout}
+                  variant="destructive"
+                  className="animate-click animate-hover-lift"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+              </div>
             </div>
 
             {/* Profile Header */}
@@ -90,11 +207,23 @@ const Profile = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="fullName">Full Name</Label>
-                        <Input id="fullName" value="Veer Manav" className="mt-1" />
+                        <Input 
+                          id="fullName" 
+                          value={formData.fullName}
+                          onChange={(e) => updateFormData("fullName", e.target.value)}
+                          disabled={!isEditing}
+                          className={`mt-1 transition-all ${!isEditing ? 'bg-muted/50' : ''}`}
+                        />
                       </div>
                       <div>
                         <Label htmlFor="employeeId">Employee ID</Label>
-                        <Input id="employeeId" value="KMRL-2024-001" className="mt-1" />
+                        <Input 
+                          id="employeeId" 
+                          value={formData.employeeId}
+                          onChange={(e) => updateFormData("employeeId", e.target.value)}
+                          disabled={!isEditing}
+                          className={`mt-1 transition-all ${!isEditing ? 'bg-muted/50' : ''}`}
+                        />
                       </div>
                     </div>
                     
@@ -104,21 +233,33 @@ const Profile = () => {
                         <Input 
                           id="email" 
                           type="email" 
-                          value="veermanav.09@gmail.com" 
-                          className="mt-1" 
+                          value={formData.email}
+                          onChange={(e) => updateFormData("email", e.target.value)}
+                          disabled={!isEditing}
+                          className={`mt-1 transition-all ${!isEditing ? 'bg-muted/50' : ''}`}
                         />
                       </div>
                       <div>
                         <Label htmlFor="phone">Phone Number</Label>
-                        <Input id="phone" value="+91 98765 43210" className="mt-1" />
+                        <Input 
+                          id="phone" 
+                          value={formData.phone}
+                          onChange={(e) => updateFormData("phone", e.target.value)}
+                          disabled={!isEditing}
+                          className={`mt-1 transition-all ${!isEditing ? 'bg-muted/50' : ''}`}
+                        />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="department">Department</Label>
-                        <Select value="operations">
-                          <SelectTrigger className="mt-1">
+                        <Select 
+                          value={formData.department}
+                          onValueChange={(value) => updateFormData("department", value)}
+                          disabled={!isEditing}
+                        >
+                          <SelectTrigger className={`mt-1 transition-all ${!isEditing ? 'bg-muted/50' : ''}`}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -131,15 +272,25 @@ const Profile = () => {
                       </div>
                       <div>
                         <Label htmlFor="position">Position</Label>
-                        <Input id="position" value="Station Controller" className="mt-1" />
+                        <Input 
+                          id="position" 
+                          value={formData.position}
+                          onChange={(e) => updateFormData("position", e.target.value)}
+                          disabled={!isEditing}
+                          className={`mt-1 transition-all ${!isEditing ? 'bg-muted/50' : ''}`}
+                        />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="language">Preferred Language</Label>
-                        <Select value="english">
-                          <SelectTrigger className="mt-1">
+                        <Select 
+                          value={formData.language}
+                          onValueChange={(value) => updateFormData("language", value)}
+                          disabled={!isEditing}
+                        >
+                          <SelectTrigger className={`mt-1 transition-all ${!isEditing ? 'bg-muted/50' : ''}`}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -151,8 +302,12 @@ const Profile = () => {
                       </div>
                       <div>
                         <Label htmlFor="timezone">Timezone</Label>
-                        <Select value="ist">
-                          <SelectTrigger className="mt-1">
+                        <Select 
+                          value={formData.timezone}
+                          onValueChange={(value) => updateFormData("timezone", value)}
+                          disabled={!isEditing}
+                        >
+                          <SelectTrigger className={`mt-1 transition-all ${!isEditing ? 'bg-muted/50' : ''}`}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -172,26 +327,101 @@ const Profile = () => {
 
               {/* Quick Stats & Activity */}
               <div className="space-y-6">
+                {/* Settings Card */}
+                <Card className="shadow-card animate-hover-lift">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center">
+                      <Settings className="h-5 w-5 mr-2" />
+                      Preferences & Settings
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Bell className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium">Email Notifications</p>
+                            <p className="text-xs text-muted-foreground">Receive email alerts</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={settings.emailNotifications}
+                          onCheckedChange={(value) => updateSettings("emailNotifications", value)}
+                        />
+                      </div>
+                      
+                      <Separator />
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium">Push Notifications</p>
+                            <p className="text-xs text-muted-foreground">Mobile push alerts</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={settings.pushNotifications}
+                          onCheckedChange={(value) => updateSettings("pushNotifications", value)}
+                        />
+                      </div>
+                      
+                      <Separator />
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium">Document Alerts</p>
+                            <p className="text-xs text-muted-foreground">New document notifications</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={settings.documentAlerts}
+                          onCheckedChange={(value) => updateSettings("documentAlerts", value)}
+                        />
+                      </div>
+                      
+                      <Separator />
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium">Weekly Reports</p>
+                            <p className="text-xs text-muted-foreground">Analytics summaries</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={settings.weeklyReports}
+                          onCheckedChange={(value) => updateSettings("weeklyReports", value)}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 <Card className="shadow-card animate-hover-lift">
                   <CardHeader>
                     <CardTitle className="text-lg">Activity Summary</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Documents Processed</span>
-                      <span className="font-medium">247</span>
+                    <div className="flex items-center justify-between p-3 bg-gradient-ocean rounded-lg animate-hover-lift">
+                      <span className="text-sm font-medium text-foreground">Documents Processed</span>
+                      <Badge className="bg-primary/20 text-primary border-primary/30">247</Badge>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Reports Generated</span>
-                      <span className="font-medium">18</span>
+                    <div className="flex items-center justify-between p-3 bg-gradient-sunset rounded-lg animate-hover-lift">
+                      <span className="text-sm font-medium text-foreground">Reports Generated</span>
+                      <Badge className="bg-success/20 text-success border-success/30">18</Badge>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">AI Queries</span>
-                      <span className="font-medium">156</span>
+                    <div className="flex items-center justify-between p-3 bg-gradient-forest rounded-lg animate-hover-lift">
+                      <span className="text-sm font-medium text-foreground">AI Queries</span>
+                      <Badge className="bg-kmrl-blue/20 text-kmrl-blue border-kmrl-blue/30">156</Badge>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Translations</span>
-                      <span className="font-medium">89</span>
+                    <div className="flex items-center justify-between p-3 bg-gradient-twilight rounded-lg animate-hover-lift">
+                      <span className="text-sm font-medium text-foreground">Translations</span>
+                      <Badge className="bg-warning/20 text-warning border-warning/30">89</Badge>
                     </div>
                   </CardContent>
                 </Card>
