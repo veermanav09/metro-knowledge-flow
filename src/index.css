@@ -53,11 +53,13 @@ All colors MUST be HSL.
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
     --gradient-ocean: linear-gradient(135deg, hsl(var(--kmrl-ocean)), hsl(var(--accent)));
     --gradient-success: linear-gradient(135deg, hsl(var(--kmrl-green)), hsl(var(--success)));
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted) / 0.3));
 
     /* Shadows */
     --shadow-primary: 0 4px 24px hsl(var(--primary) / 0.15);
     --shadow-card: 0 2px 16px hsl(215 25% 15% / 0.08);
     --shadow-glow: 0 0 32px hsl(var(--primary-glow) / 0.3);
+    --shadow-elegant: 0 10px 30px hsl(var(--primary) / 0.2);
 
     /* Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -139,11 +141,11 @@ All colors MUST be HSL.
 @layer components {
   /* Interactive animations */
   .animate-click {
-    @apply transform transition-transform duration-150 active:scale-95;
+    @apply transform transition-all duration-200 active:scale-95 hover:shadow-lg;
   }
   
   .animate-hover-lift {
-    @apply transform transition-all duration-300 hover:shadow-glow hover:-translate-y-1;
+    @apply transform transition-all duration-300 hover:shadow-glow hover:-translate-y-1 hover:scale-105;
   }
   
   .animate-fade-in {
@@ -155,19 +157,59 @@ All colors MUST be HSL.
   }
   
   .animate-train {
-    animation: trainMove 3s ease-in-out infinite;
+    animation: trainMove 2s ease-in-out infinite;
   }
   
   /* Scroll reveal animation */
   .scroll-reveal {
     opacity: 0;
     transform: translateY(30px);
-    transition: all 0.6s ease-out;
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   }
   
   .scroll-reveal.revealed {
     opacity: 1;
     transform: translateY(0);
+  }
+
+  /* Enhanced file upload animations */
+  .file-drop-zone {
+    @apply relative overflow-hidden transition-all duration-300;
+  }
+
+  .file-drop-zone.drag-active {
+    animation: dragPulse 0.8s ease-in-out infinite;
+  }
+
+  /* Particle background effect */
+  .particle-bg::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 20% 20%, hsl(var(--primary) / 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, hsl(var(--accent) / 0.08) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  /* Success pulse animation */
+  .success-pulse {
+    animation: successPulse 2s ease-in-out infinite;
+  }
+
+  /* Shimmer effect for progress bars */
+  .progress-shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, hsl(var(--primary-foreground) / 0.4), transparent);
+    animation: shimmer 1.5s ease-in-out infinite;
   }
 }
 
@@ -195,9 +237,40 @@ All colors MUST be HSL.
 
 @keyframes trainMove {
   0%, 100% {
-    transform: translateX(-10px);
+    transform: translateX(-4px) scale(1);
   }
   50% {
-    transform: translateX(10px);
+    transform: translateX(4px) scale(1.1);
+  }
+}
+
+@keyframes dragPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 0.95;
+  }
+}
+
+@keyframes successPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
   }
 }

@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { Upload, FileText, Loader2, CheckCircle, AlertCircle, Train } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
+import { Upload, FileText, Loader2, CheckCircle, AlertCircle, Train, Sparkles, Zap, Rocket } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,10 +18,36 @@ interface UploadedFile {
 export const DocumentUpload = () => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [source, setSource] = useState<string>('upload');
+  const [isUploading, setIsUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const { toast } = useToast();
+
+  const handleDrop = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    setDragOver(false);
+    const droppedFiles = Array.from(event.dataTransfer.files);
+    processFiles(droppedFiles);
+  }, []);
+
+  const handleDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    setDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    setDragOver(false);
+  }, []);
 
   const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(event.target.files || []);
+    processFiles(selectedFiles);
+  }, []);
+
+  const processFiles = useCallback((selectedFiles: File[]) => {
+    if (selectedFiles.length === 0) return;
+    
+    setIsUploading(true);
     const newFiles = selectedFiles.map(file => ({
       file,
       status: 'uploading' as const,
@@ -103,22 +129,47 @@ export const DocumentUpload = () => {
 
       if (docError) throw docError;
 
-      // Simulate AI processing
-      setTimeout(() => {
-        setFiles(prev => prev.map((f, i) => 
-          i === index ? { 
-            ...f, 
-            status: 'completed', 
-            progress: 100, 
-            result: docData 
-          } : f
-        ));
+      // Simulate AI processing with progress updates
+      let currentProgress = 50;
+      const progressInterval = setInterval(() => {
+        currentProgress += Math.random() * 15;
+        if (currentProgress >= 95) {
+          clearInterval(progressInterval);
+          currentProgress = 100;
+          
+          setFiles(prev => prev.map((f, i) => 
+            i === index ? { 
+              ...f, 
+              status: 'completed', 
+              progress: 100, 
+              result: docData 
+            } : f
+          ));
 
-        toast({
-          title: "Document Processed",
-          description: `${fileItem.file.name} has been successfully processed and routed.`,
-        });
-      }, 2000);
+          toast({
+            title: "🎉 Document Processed!",
+            description: `${fileItem.file.name} has been successfully processed and routed.`,
+          });
+          
+          // Check if all files are done
+          setFiles(prev => {
+            const allCompleted = prev.every(f => f.status === 'completed' || f.status === 'error');
+            if (allCompleted) {
+              setIsUploading(false);
+            }
+            return prev;
+          });
+        } else {
+          setFiles(prev => prev.map((f, i) => 
+            i === index ? { ...f, progress: Math.min(currentProgress, 95) } : f
+          ));
+        }
+      }, 200);
+
+      // Cleanup after 3 seconds max
+      setTimeout(() => {
+        clearInterval(progressInterval);
+      }, 3000);
 
     } catch (error) {
       console.error('Error processing file:', error);
@@ -127,10 +178,12 @@ export const DocumentUpload = () => {
       ));
 
       toast({
-        title: "Processing Error",
-        description: `Failed to process ${fileItem.file.name}`,
+        title: "❌ Processing Error",
+        description: `Failed to process ${fileItem.file.name}. Please try again.`,
         variant: "destructive",
       });
+      
+      setIsUploading(false);
     }
   };
 
@@ -147,102 +200,220 @@ export const DocumentUpload = () => {
   };
 
   const TrainProgress = ({ progress }: { progress: number }) => (
-    <div className="relative w-full bg-muted rounded-full h-3 overflow-hidden">
+    <div className="relative w-full bg-muted rounded-full h-4 overflow-hidden shadow-inner">
       <div 
-        className="bg-gradient-primary h-full transition-all duration-500 relative"
+        className="bg-gradient-primary h-full transition-all duration-700 relative overflow-hidden"
         style={{ width: `${progress}%` }}
       >
-        <div className="absolute right-0 top-0 h-full w-6 flex items-center justify-center">
-          <Train className="h-3 w-3 text-primary-foreground animate-train" />
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
+        <div className="absolute right-0 top-0 h-full w-8 flex items-center justify-center">
+          <Train className="h-4 w-4 text-primary-foreground animate-train drop-shadow-lg" />
         </div>
+        {progress > 10 && (
+          <div className="absolute left-2 top-0 h-full flex items-center">
+            <Sparkles className="h-3 w-3 text-primary-foreground animate-pulse" />
+          </div>
+        )}
       </div>
     </div>
   );
 
   return (
     <div className="space-y-6">
-      <Card className="shadow-card animate-hover-lift">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Upload className="h-5 w-5 mr-2 text-primary" />
+      <Card className="shadow-card animate-hover-lift border-2 transition-all duration-300 hover:shadow-glow">
+        <CardHeader className="bg-gradient-subtle">
+          <CardTitle className="flex items-center text-lg">
+            <div className="relative">
+              <Upload className="h-6 w-6 mr-3 text-primary" />
+              {isUploading && (
+                <div className="absolute -top-1 -right-1">
+                  <Zap className="h-3 w-3 text-warning animate-pulse" />
+                </div>
+              )}
+            </div>
             Document Ingestion Hub
+            <div className="ml-auto flex items-center space-x-2">
+              <Rocket className="h-4 w-4 text-muted-foreground animate-bounce" />
+              <span className="text-sm text-muted-foreground font-normal">AI-Powered</span>
+            </div>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
+          {/* Drag and Drop Zone */}
+          <div 
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-300 ${
+              dragOver 
+                ? 'border-primary bg-primary/5 shadow-glow' 
+                : 'border-muted-foreground/25 hover:border-primary/50'
+            }`}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+          >
+            <div className="flex flex-col items-center space-y-4">
+              <div className={`p-4 rounded-full transition-all duration-300 ${
+                dragOver ? 'bg-primary text-primary-foreground animate-pulse' : 'bg-muted'
+              }`}>
+                <Upload className={`h-8 w-8 transition-transform duration-300 ${
+                  dragOver ? 'scale-110' : ''
+                }`} />
+              </div>
+              <div>
+                <p className="text-lg font-medium">
+                  {dragOver ? 'Drop files here!' : 'Drag & drop files here'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  or click below to browse files
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Supports PDF, DOC, DOCX, TXT, PNG, JPG (max 10MB each)
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="source">Document Source</Label>
+              <Label htmlFor="source" className="flex items-center">
+                <Sparkles className="h-4 w-4 mr-2 text-primary" />
+                Document Source
+              </Label>
               <Select value={source} onValueChange={setSource}>
-                <SelectTrigger className="animate-click">
+                <SelectTrigger className="animate-click hover:shadow-elegant transition-all duration-200">
                   <SelectValue placeholder="Select source" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="upload">Direct Upload</SelectItem>
-                  <SelectItem value="email">Email Attachment</SelectItem>
-                  <SelectItem value="sharepoint">SharePoint</SelectItem>
-                  <SelectItem value="whatsapp">WhatsApp PDF</SelectItem>
-                  <SelectItem value="maximo">Maximo Export</SelectItem>
-                  <SelectItem value="scan">Scanned Document</SelectItem>
+                  <SelectItem value="upload">📁 Direct Upload</SelectItem>
+                  <SelectItem value="email">📧 Email Attachment</SelectItem>
+                  <SelectItem value="sharepoint">📊 SharePoint</SelectItem>
+                  <SelectItem value="whatsapp">💬 WhatsApp PDF</SelectItem>
+                  <SelectItem value="maximo">⚙️ Maximo Export</SelectItem>
+                  <SelectItem value="scan">📷 Scanned Document</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="file-upload">Select Files</Label>
+              <Label htmlFor="file-upload" className="flex items-center">
+                <FileText className="h-4 w-4 mr-2 text-primary" />
+                Browse Files
+              </Label>
               <Input
                 id="file-upload"
                 type="file"
                 multiple
                 accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg"
                 onChange={handleFileSelect}
-                className="cursor-pointer animate-click"
+                className="cursor-pointer animate-click hover:shadow-elegant transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-            <div className="p-4 bg-gradient-ocean rounded-lg animate-hover-lift">
-              <div className="text-2xl font-bold text-primary">247</div>
-              <div className="text-sm text-muted-foreground">Documents Today</div>
+            <div className="group p-6 bg-gradient-ocean rounded-xl animate-hover-lift hover:scale-105 transition-all duration-300 border border-primary/20 hover:shadow-glow">
+              <div className="flex items-center justify-center mb-2">
+                <FileText className="h-6 w-6 text-primary mr-2" />
+                <div className="text-3xl font-bold text-primary animate-pulse">247</div>
+              </div>
+              <div className="text-sm text-muted-foreground font-medium">Documents Today</div>
+              <div className="text-xs text-primary/60 mt-1">↗ +12% from yesterday</div>
             </div>
-            <div className="p-4 bg-success/10 rounded-lg animate-hover-lift">
-              <div className="text-2xl font-bold text-success">98.5%</div>
-              <div className="text-sm text-muted-foreground">Processing Accuracy</div>
+            <div className="group p-6 bg-gradient-to-br from-success/5 to-success/15 rounded-xl animate-hover-lift hover:scale-105 transition-all duration-300 border border-success/20 hover:shadow-elegant">
+              <div className="flex items-center justify-center mb-2">
+                <CheckCircle className="h-6 w-6 text-success mr-2" />
+                <div className="text-3xl font-bold text-success">98.5%</div>
+              </div>
+              <div className="text-sm text-muted-foreground font-medium">Processing Accuracy</div>
+              <div className="text-xs text-success/60 mt-1">🎯 Industry leading</div>
             </div>
-            <div className="p-4 bg-warning/10 rounded-lg animate-hover-lift">
-              <div className="text-2xl font-bold text-warning">3.2min</div>
-              <div className="text-sm text-muted-foreground">Avg Processing Time</div>
+            <div className="group p-6 bg-gradient-to-br from-warning/5 to-warning/15 rounded-xl animate-hover-lift hover:scale-105 transition-all duration-300 border border-warning/20 hover:shadow-elegant">
+              <div className="flex items-center justify-center mb-2">
+                <Zap className="h-6 w-6 text-warning mr-2" />
+                <div className="text-3xl font-bold text-warning">3.2min</div>
+              </div>
+              <div className="text-sm text-muted-foreground font-medium">Avg Processing Time</div>
+              <div className="text-xs text-warning/60 mt-1">⚡ Lightning fast</div>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {files.length > 0 && (
-        <Card className="shadow-card animate-slide-up">
-          <CardHeader>
-            <CardTitle>Processing Queue</CardTitle>
+        <Card className="shadow-card animate-slide-up border-2 border-primary/10 bg-gradient-subtle">
+          <CardHeader className="border-b border-border/50">
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Train className="h-5 w-5 mr-2 text-primary animate-pulse" />
+                Processing Queue
+                <span className="ml-2 bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-medium">
+                  {files.length} files
+                </span>
+              </div>
+              {isUploading && (
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  Processing...
+                </div>
+              )}
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
+          <CardContent className="p-4">
+            <div className="space-y-3 max-h-64 overflow-y-auto">
               {files.map((fileItem, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg animate-fade-in">
-                  <div className="flex items-center space-x-3">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
+                <div 
+                  key={index} 
+                  className={`group flex items-center justify-between p-4 rounded-xl transition-all duration-500 animate-fade-in border ${
+                    fileItem.status === 'completed' 
+                      ? 'bg-success/5 border-success/20 shadow-sm' 
+                      : fileItem.status === 'error'
+                      ? 'bg-destructive/5 border-destructive/20'
+                      : 'bg-muted/40 border-border/30 hover:bg-muted/60'
+                  }`}
+                  style={{animationDelay: `${index * 100}ms`}}
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className={`p-2 rounded-lg transition-colors duration-300 ${
+                      fileItem.status === 'completed' ? 'bg-success/10' : 'bg-primary/10'
+                    }`}>
+                      <FileText className="h-5 w-5 text-muted-foreground" />
+                    </div>
                     <div>
-                      <p className="font-medium text-sm">{fileItem.file.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {(fileItem.file.size / 1024 / 1024).toFixed(2)} MB
+                      <p className="font-medium text-sm group-hover:text-primary transition-colors">
+                        {fileItem.file.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground flex items-center">
+                        <span>{(fileItem.file.size / 1024 / 1024).toFixed(2)} MB</span>
+                        {fileItem.status === 'completed' && (
+                          <span className="ml-2 text-success font-medium">✓ Complete</span>
+                        )}
+                        {fileItem.status === 'error' && (
+                          <span className="ml-2 text-destructive font-medium">✗ Failed</span>
+                        )}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-24">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-32">
                       <TrainProgress progress={fileItem.progress} />
                     </div>
-                    {getStatusIcon(fileItem.status)}
+                    <div className="text-xs text-muted-foreground font-mono min-w-[40px] text-right">
+                      {Math.round(fileItem.progress)}%
+                    </div>
+                    <div className="transition-transform duration-300 group-hover:scale-110">
+                      {getStatusIcon(fileItem.status)}
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
+            
+            {files.some(f => f.status === 'completed') && (
+              <div className="mt-4 p-3 bg-success/5 border border-success/20 rounded-lg animate-fade-in">
+                <div className="flex items-center text-success text-sm font-medium">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Successfully processed {files.filter(f => f.status === 'completed').length} documents
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
