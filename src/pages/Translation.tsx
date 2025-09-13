@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Languages, ArrowRight, RefreshCw, Copy, Download } from "lucide-react";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
 
 const Translation = () => {
@@ -14,6 +15,7 @@ const Translation = () => {
   const [translatedText, setTranslatedText] = useState("");
   const [isTranslating, setIsTranslating] = useState(false);
   const [sourceLanguage, setSourceLanguage] = useState("english");
+  const { toast } = useToast();
 
   const recentTranslations = [
     {
@@ -63,6 +65,35 @@ const Translation = () => {
     setSourceLanguage(sourceLanguage === "english" ? "malayalam" : "english");
     setSourceText(translatedText);
     setTranslatedText(sourceText);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied to clipboard",
+      description: "Text has been copied successfully.",
+    });
+  };
+
+  const downloadTranslation = () => {
+    if (!translatedText) return;
+    
+    const blob = new Blob([`Original: ${sourceText}\n\nTranslation: ${translatedText}`], {
+      type: 'text/plain'
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `translation-${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Download started",
+      description: "Translation file has been downloaded.",
+    });
   };
 
   return (
@@ -201,10 +232,20 @@ const Translation = () => {
                       />
                       {translatedText && (
                         <div className="absolute top-2 right-2 flex space-x-1">
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0"
+                            onClick={() => copyToClipboard(translatedText)}
+                          >
                             <Copy className="h-3 w-3" />
                           </Button>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0"
+                            onClick={downloadTranslation}
+                          >
                             <Download className="h-3 w-3" />
                           </Button>
                         </div>
@@ -254,7 +295,12 @@ const Translation = () => {
                               {new Date(translation.timestamp).toLocaleString()}
                             </span>
                           </div>
-                          <Button variant="ghost" size="sm" className="animate-click">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="animate-click"
+                            onClick={() => copyToClipboard(translation.translated)}
+                          >
                             <Copy className="h-3 w-3" />
                           </Button>
                         </div>

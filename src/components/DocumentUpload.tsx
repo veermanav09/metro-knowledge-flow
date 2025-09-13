@@ -84,13 +84,20 @@ export const DocumentUpload = () => {
         }
       }
 
-      // Upload to Supabase Storage
+      // Get current user first
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Upload to Supabase Storage with user folder structure
       const fileExt = fileItem.file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('documents')
-        .upload(`uploads/${fileName}`, fileItem.file, {
+        .upload(`${user.id}/${fileName}`, fileItem.file, {
           cacheControl: '3600',
           upsert: false
         });
@@ -100,14 +107,7 @@ export const DocumentUpload = () => {
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('documents')
-        .getPublicUrl(`uploads/${fileName}`);
-
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
+        .getPublicUrl(`${user.id}/${fileName}`);
 
       // Create document record
       const { data: docData, error: docError } = await supabase
@@ -147,7 +147,7 @@ export const DocumentUpload = () => {
           ));
 
           toast({
-            title: "🎉 Document Processed!",
+            title: "Document Processed Successfully",
             description: `${fileItem.file.name} has been successfully processed and routed.`,
           });
           
@@ -178,7 +178,7 @@ export const DocumentUpload = () => {
       ));
 
       toast({
-        title: "❌ Processing Error",
+        title: "Processing Error",
         description: `Failed to process ${fileItem.file.name}. Please try again.`,
         variant: "destructive",
       });
@@ -315,7 +315,7 @@ export const DocumentUpload = () => {
                 <div className="text-3xl font-bold text-primary animate-pulse">247</div>
               </div>
               <div className="text-sm text-muted-foreground font-medium">Documents Today</div>
-              <div className="text-xs text-primary/60 mt-1">↗ +12% from yesterday</div>
+              <div className="text-xs text-primary/60 mt-1">+12% from yesterday</div>
             </div>
             <div className="group p-6 bg-gradient-to-br from-success/5 to-success/15 rounded-xl animate-hover-lift hover:scale-105 transition-all duration-300 border border-success/20 hover:shadow-elegant">
               <div className="flex items-center justify-center mb-2">
@@ -323,7 +323,7 @@ export const DocumentUpload = () => {
                 <div className="text-3xl font-bold text-success">98.5%</div>
               </div>
               <div className="text-sm text-muted-foreground font-medium">Processing Accuracy</div>
-              <div className="text-xs text-success/60 mt-1">🎯 Industry leading</div>
+              <div className="text-xs text-success/60 mt-1">Industry leading</div>
             </div>
             <div className="group p-6 bg-gradient-to-br from-warning/5 to-warning/15 rounded-xl animate-hover-lift hover:scale-105 transition-all duration-300 border border-warning/20 hover:shadow-elegant">
               <div className="flex items-center justify-center mb-2">
@@ -331,7 +331,7 @@ export const DocumentUpload = () => {
                 <div className="text-3xl font-bold text-warning">3.2min</div>
               </div>
               <div className="text-sm text-muted-foreground font-medium">Avg Processing Time</div>
-              <div className="text-xs text-warning/60 mt-1">⚡ Lightning fast</div>
+              <div className="text-xs text-warning/60 mt-1">Lightning fast</div>
             </div>
           </div>
         </CardContent>
@@ -383,10 +383,10 @@ export const DocumentUpload = () => {
                       <p className="text-xs text-muted-foreground flex items-center">
                         <span>{(fileItem.file.size / 1024 / 1024).toFixed(2)} MB</span>
                         {fileItem.status === 'completed' && (
-                          <span className="ml-2 text-success font-medium">✓ Complete</span>
+                          <span className="ml-2 text-success font-medium">Complete</span>
                         )}
                         {fileItem.status === 'error' && (
-                          <span className="ml-2 text-destructive font-medium">✗ Failed</span>
+                          <span className="ml-2 text-destructive font-medium">Failed</span>
                         )}
                       </p>
                     </div>
