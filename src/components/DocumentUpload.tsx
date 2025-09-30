@@ -13,11 +13,14 @@ interface UploadedFile {
   status: 'uploading' | 'processing' | 'completed' | 'error';
   progress: number;
   result?: any;
+  detectedLanguage?: string;
+  selectedDepartment?: string;
 }
 
 export const DocumentUpload = () => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [source, setSource] = useState<string>('upload');
+  const [department, setDepartment] = useState<string>('operations');
   const [isUploading, setIsUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const { toast } = useToast();
@@ -65,7 +68,7 @@ export const DocumentUpload = () => {
     try {
       // Update status to processing
       setFiles(prev => prev.map((f, i) => 
-        i === index ? { ...f, status: 'processing', progress: 50 } : f
+        i === index ? { ...f, status: 'processing', progress: 25, selectedDepartment: department } : f
       ));
 
       // Create documents bucket if it doesn't exist
@@ -109,16 +112,43 @@ export const DocumentUpload = () => {
         .from('documents')
         .getPublicUrl(`${user.id}/${fileName}`);
 
-      // Create document record
+      // Detect language if the file is text-based
+      let detectedLanguage = 'english';
+      setFiles(prev => prev.map((f, i) => 
+        i === index ? { ...f, progress: 40 } : f
+      ));
+
+      try {
+        // Read file content for language detection
+        const fileContent = await fileItem.file.text();
+        const sampleText = fileContent.substring(0, 1000);
+        
+        const { data: langData, error: langError } = await supabase.functions.invoke('detect-language', {
+          body: { text: sampleText }
+        });
+
+        if (!langError && langData?.language) {
+          detectedLanguage = langData.language;
+          console.log('Detected language:', detectedLanguage);
+        }
+      } catch (langDetectError) {
+        console.log('Language detection skipped or failed:', langDetectError);
+      }
+
+      setFiles(prev => prev.map((f, i) => 
+        i === index ? { ...f, progress: 60, detectedLanguage } : f
+      ));
+
+      // Create document record with detected language and selected department
       const { data: docData, error: docError } = await supabase
         .from('documents')
         .insert([{
           title: fileItem.file.name,
-          content: 'Processing...', // Will be updated by AI processing
-          original_language: 'english', // Will be detected
-          document_type: 'other', // Will be classified
-          department: 'operations', // Will be routed
-          priority: 'medium', // Will be determined
+          content: 'Processing...',
+          original_language: detectedLanguage,
+          document_type: 'other',
+          department: department,
+          priority: 'medium',
           status: 'processing',
           source: source,
           file_url: publicUrl,
@@ -130,7 +160,7 @@ export const DocumentUpload = () => {
       if (docError) throw docError;
 
       // Simulate AI processing with progress updates
-      let currentProgress = 50;
+      let currentProgress = 70;
       const progressInterval = setInterval(() => {
         currentProgress += Math.random() * 15;
         if (currentProgress >= 95) {
@@ -272,7 +302,25 @@ export const DocumentUpload = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="department" className="flex items-center">
+                <Train className="h-4 w-4 mr-2 text-primary" />
+                Target Department
+              </Label>
+              <Select value={department} onValueChange={setDepartment}>
+                <SelectTrigger className="animate-click hover:shadow-elegant transition-all duration-200">
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="operations">🚇 Operations</SelectItem>
+                  <SelectItem value="safety">🛡️ Safety</SelectItem>
+                  <SelectItem value="technical">🔧 Technical</SelectItem>
+                  <SelectItem value="administration">📋 Administration</SelectItem>
+                  <SelectItem value="engineering">⚙️ Engineering</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <Label htmlFor="source" className="flex items-center">
                 <Sparkles className="h-4 w-4 mr-2 text-primary" />
@@ -380,8 +428,18 @@ export const DocumentUpload = () => {
                       <p className="font-medium text-sm group-hover:text-primary transition-colors">
                         {fileItem.file.name}
                       </p>
-                      <p className="text-xs text-muted-foreground flex items-center">
+                      <p className="text-xs text-muted-foreground flex items-center flex-wrap gap-2">
                         <span>{(fileItem.file.size / 1024 / 1024).toFixed(2)} MB</span>
+                        {fileItem.detectedLanguage && (
+                          <span className="px-2 py-0.5 bg-primary/10 text-primary rounded">
+                            {fileItem.detectedLanguage === 'malayalam' ? 'മലയാളം' : 'English'}
+                          </span>
+                        )}
+                        {fileItem.selectedDepartment && (
+                          <span className="px-2 py-0.5 bg-muted rounded">
+                            {fileItem.selectedDepartment}
+                          </span>
+                        )}
                         {fileItem.status === 'completed' && (
                           <span className="ml-2 text-success font-medium">Complete</span>
                         )}

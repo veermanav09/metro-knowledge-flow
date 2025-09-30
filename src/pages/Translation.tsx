@@ -8,6 +8,7 @@ import { Languages, ArrowRight, RefreshCw, Copy, Download } from "lucide-react";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Translation = () => {
   const translationRef = useScrollReveal(0.1);
@@ -49,16 +50,39 @@ const Translation = () => {
     
     setIsTranslating(true);
     
-    // Simulate translation API call
-    setTimeout(() => {
-      // Mock translation - in real app this would call a translation service
-      const mockTranslation = sourceLanguage === "english" 
-        ? "ഇത് ഒരു മാതൃകാ വിവർത്തനമാണ്. യഥാർത്ഥ ആപ്ലിക്കേഷനിൽ ഇത് ഒരു വിവർത്തന സേവനത്തെ വിളിക്കും."
-        : "This is a sample translation. In the real application, this would call a translation service.";
+    try {
+      const targetLanguage = sourceLanguage === "english" ? "malayalam" : "english";
       
-      setTranslatedText(mockTranslation);
+      const { data, error } = await supabase.functions.invoke('translate', {
+        body: {
+          text: sourceText,
+          sourceLanguage: sourceLanguage,
+          targetLanguage: targetLanguage
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      setTranslatedText(data.translatedText);
+      
+      toast({
+        title: "Translation completed",
+        description: "Text has been successfully translated.",
+      });
+    } catch (error: any) {
+      console.error('Translation error:', error);
+      toast({
+        title: "Translation failed",
+        description: error.message || "Failed to translate text. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsTranslating(false);
-    }, 2000);
+    }
   };
 
   const swapLanguages = () => {
