@@ -13,22 +13,26 @@ import { User, Mail, MapPin, Phone, Calendar, Settings, Camera, LogOut, Edit3, S
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
   const profileRef = useScrollReveal(0.1);
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
   
   // Form state
   const [formData, setFormData] = useState({
-    fullName: "Veer Manav",
-    employeeId: "KMRL-2024-001",
-    email: "veermanav.09@gmail.com",
-    phone: "+91 98765 43210",
+    fullName: "",
+    employeeId: "",
+    email: "",
+    phone: "",
     department: "operations",
-    position: "Station Controller",
+    position: "",
     language: "english",
     timezone: "ist"
   });
@@ -41,6 +45,61 @@ const Profile = () => {
     weeklyReports: true,
     darkMode: false
   });
+
+  useEffect(() => {
+    loadUserProfile();
+  }, []);
+
+  const loadUserProfile = async () => {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        navigate('/');
+        return;
+      }
+
+      setUserId(user.id);
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Error loading profile:', profileError);
+        toast({
+          title: "Error",
+          description: "Failed to load profile",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (profile) {
+        setFormData({
+          fullName: profile.full_name || "",
+          employeeId: `KMRL-${user.id.substring(0, 8)}`,
+          email: profile.email || user.email || "",
+          phone: "",
+          department: profile.department || "operations",
+          position: profile.role || "",
+          language: profile.language_preference || "english",
+          timezone: "ist"
+        });
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load profile",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -60,31 +119,42 @@ const Profile = () => {
   };
 
   const handleSave = async () => {
+    if (!userId) return;
+    
     setIsSaving(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsSaving(false);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: formData.fullName,
+          department: formData.department,
+          role: formData.position,
+          language_preference: formData.language,
+        })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
       setIsEditing(false);
       toast({
         title: "Profile updated",
         description: "Your profile has been saved successfully.",
       });
-    }, 1000);
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save profile",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
     setIsEditing(false);
-    // Reset form data to original values
-    setFormData({
-      fullName: "Veer Manav",
-      employeeId: "KMRL-2024-001",
-      email: "veermanav.09@gmail.com",
-      phone: "+91 98765 43210",
-      department: "operations",
-      position: "Station Controller",
-      language: "english",
-      timezone: "ist"
-    });
+    loadUserProfile();
   };
 
   const updateFormData = (field: string, value: string) => {
@@ -94,6 +164,14 @@ const Profile = () => {
   const updateSettings = (setting: string, value: boolean) => {
     setSettings(prev => ({ ...prev, [setting]: value }));
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -164,7 +242,7 @@ const Profile = () => {
                     <Avatar className="h-24 w-24">
                       <AvatarImage src="/placeholder.svg" />
                       <AvatarFallback className="bg-gradient-primary text-primary-foreground text-lg font-bold">
-                        VM
+                        {formData.fullName.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <Button
@@ -175,8 +253,8 @@ const Profile = () => {
                     </Button>
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-foreground">Veer Manav</h2>
-                    <p className="text-muted-foreground">Station Controller</p>
+                    <h2 className="text-2xl font-bold text-foreground">{formData.fullName || 'User'}</h2>
+                    <p className="text-muted-foreground">{formData.position || 'Employee'}</p>
                     <div className="flex items-center space-x-4 mt-3">
                       <Badge className="bg-success/20 text-success border-success/30">Active</Badge>
                       <Badge variant="outline">Operations Department</Badge>
