@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.detect-language]
 verify_jwt = false
+
+[functions.detect-image-language]
+verify_jwt = false

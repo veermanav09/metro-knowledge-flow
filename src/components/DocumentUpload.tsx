@@ -118,10 +118,12 @@ export const DocumentUpload = () => {
         i === index ? { ...f, progress: 40 } : f
       ));
 
-      // Check if file is text-based (txt, doc, docx) or needs text extraction
+      // Check file type for language detection
       const originalFileName = fileItem.file.name.toLowerCase();
       const isTextFile = originalFileName.endsWith('.txt');
       const isDocFile = originalFileName.endsWith('.doc') || originalFileName.endsWith('.docx');
+      const isImageFile = originalFileName.endsWith('.png') || originalFileName.endsWith('.jpg') || 
+                          originalFileName.endsWith('.jpeg') || originalFileName.endsWith('.webp');
       
       // For text files, read directly
       if (isTextFile) {
@@ -140,14 +142,42 @@ export const DocumentUpload = () => {
         } catch (langDetectError) {
           console.log('Language detection failed:', langDetectError);
         }
-      } 
-      // For PDFs and images, check filename for Malayalam indicators
-      else if (originalFileName.includes('mal') || originalFileName.includes('malayalam') || 
-               originalFileName.includes('മലയാളം') || /[\u0D00-\u0D7F]/.test(originalFileName)) {
-        detectedLanguage = 'malayalam';
-        console.log('Detected Malayalam from filename:', originalFileName);
       }
-      // For doc/docx files, attempt basic text extraction (limited without full parsing)
+      // For images, use vision AI to detect language
+      else if (isImageFile) {
+        try {
+          const formData = new FormData();
+          formData.append('image', fileItem.file);
+          
+          const { data: langData, error: langError } = await supabase.functions.invoke('detect-image-language', {
+            body: formData
+          });
+
+          if (!langError && langData?.language) {
+            detectedLanguage = langData.language;
+            console.log('Detected language from image:', detectedLanguage);
+          } else {
+            console.log('Image language detection error:', langError);
+          }
+        } catch (langDetectError) {
+          console.log('Image language detection failed:', langDetectError);
+          // Fallback to filename check
+          if (originalFileName.includes('mal') || originalFileName.includes('malayalam') || 
+              originalFileName.includes('മലയാളം') || /[\u0D00-\u0D7F]/.test(originalFileName)) {
+            detectedLanguage = 'malayalam';
+            console.log('Detected Malayalam from filename:', originalFileName);
+          }
+        }
+      }
+      // For PDFs, check filename for Malayalam indicators
+      else if (originalFileName.endsWith('.pdf')) {
+        if (originalFileName.includes('mal') || originalFileName.includes('malayalam') || 
+            originalFileName.includes('മലയാളം') || /[\u0D00-\u0D7F]/.test(originalFileName)) {
+          detectedLanguage = 'malayalam';
+          console.log('Detected Malayalam from PDF filename:', originalFileName);
+        }
+      }
+      // For doc/docx files, attempt basic text extraction
       else if (isDocFile) {
         try {
           const fileContent = await fileItem.file.text();
