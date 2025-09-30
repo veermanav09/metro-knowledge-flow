@@ -112,27 +112,123 @@ export const DocumentUpload = () => {
         .from('documents')
         .getPublicUrl(`${user.id}/${fileName}`);
 
-      // Detect language if the file is text-based
+      // Detect language only for text-based files
       let detectedLanguage = 'english';
       setFiles(prev => prev.map((f, i) => 
         i === index ? { ...f, progress: 40 } : f
       ));
 
-      try {
-        // Read file content for language detection
-        const fileContent = await fileItem.file.text();
-        const sampleText = fileContent.substring(0, 1000);
-        
-        const { data: langData, error: langError } = await supabase.functions.invoke('detect-language', {
-          body: { text: sampleText }
-        });
+      // Check if file is text-based (txt, doc, docx) or needs text extraction
+      const originalFileName = fileItem.file.name.toLowerCase();
+      const isTextFile = originalFileName.endsWith('.txt');
+      const isDocFile = originalFileName.endsWith('.doc') || originalFileName.endsWith('.docx');
+      
+      // For text files, read directly
+      if (isTextFile) {
+        try {
+          const fileContent = await fileItem.file.text();
+          const sampleText = fileContent.substring(0, 2000);
+          
+          const { data: langData, error: langError } = await supabase.functions.invoke('detect-language', {
+            body: { text: sampleText }
+          });
 
-        if (!langError && langData?.language) {
-          detectedLanguage = langData.language;
-          console.log('Detected language:', detectedLanguage);
+          if (!langError && langData?.language) {
+            detectedLanguage = langData.language;
+            console.log('Detected language from text file:', detectedLanguage);
+          }
+        } catch (langDetectError) {
+          console.log('Language detection failed:', langDetectError);
         }
-      } catch (langDetectError) {
-        console.log('Language detection skipped or failed:', langDetectError);
+      } 
+      // For PDFs and images, check filename for Malayalam indicators
+      else if (originalFileName.includes('mal') || originalFileName.includes('malayalam') || 
+               originalFileName.includes('മലയാളം') || /[\u0D00-\u0D7F]/.test(originalFileName)) {
+        detectedLanguage = 'malayalam';
+        console.log('Detected Malayalam from filename:', originalFileName);
+      }
+      // For doc/docx files, attempt basic text extraction (limited without full parsing)
+      else if (isDocFile) {
+        try {
+          const fileContent = await fileItem.file.text();
+          // Check for Malayalam Unicode characters in the content
+          if (/[\u0D00-\u0D7F]/.test(fileContent.substring(0, 5000))) {
+            detectedLanguage = 'malayalam';
+            console.log('Detected Malayalam characters in document');
+          } else {
+            // Try AI detection on a sample
+            const cleanText = fileContent.replace(/[^\x20-\x7E\u0D00-\u0D7F]/g, ' ').substring(0, 2000);
+            if (cleanText.trim().length > 50) {
+              const { data: langData, error: langError } = await supabase.functions.invoke('detect-language', {
+                body: { text: cleanText }
+              });
+              
+              if (!langError && langData?.language) {
+                detectedLanguage = langData.language;
+                console.log('Detected language from document content:', detectedLanguage);
+              }
+            }
+          }
+        } catch (langDetectError) {
+          console.log('Document language detection skipped:', langDetectError);
+        }
+      }
+      else {
+        console.log('Language detection skipped for file type:', originalFileName);
+      }
+      
+      // For text files, read directly
+      if (isTextFile) {
+        try {
+          const fileContent = await fileItem.file.text();
+          const sampleText = fileContent.substring(0, 2000);
+          
+          const { data: langData, error: langError } = await supabase.functions.invoke('detect-language', {
+            body: { text: sampleText }
+          });
+
+          if (!langError && langData?.language) {
+            detectedLanguage = langData.language;
+            console.log('Detected language from text file:', detectedLanguage);
+          }
+        } catch (langDetectError) {
+          console.log('Language detection failed:', langDetectError);
+        }
+      } 
+      // For PDFs and images, check filename for Malayalam indicators
+      else if (fileName.includes('mal') || fileName.includes('malayalam') || 
+               fileName.includes('മലയാളം') || /[\u0D00-\u0D7F]/.test(fileName)) {
+        detectedLanguage = 'malayalam';
+        console.log('Detected Malayalam from filename:', fileName);
+      }
+      // For doc/docx files, attempt basic text extraction (limited without full parsing)
+      else if (isDocFile) {
+        try {
+          const fileContent = await fileItem.file.text();
+          // Check for Malayalam Unicode characters in the content
+          if (/[\u0D00-\u0D7F]/.test(fileContent.substring(0, 5000))) {
+            detectedLanguage = 'malayalam';
+            console.log('Detected Malayalam characters in document');
+          } else {
+            // Try AI detection on a sample
+            const cleanText = fileContent.replace(/[^\x20-\x7E\u0D00-\u0D7F]/g, ' ').substring(0, 2000);
+            if (cleanText.trim().length > 50) {
+              const { data: langData, error: langError } = await supabase.functions.invoke('detect-language', {
+                body: { text: cleanText }
+              });
+              
+              if (!langError && langData?.language) {
+                detectedLanguage = langData.language;
+                console.log('Detected language from document content:', detectedLanguage);
+              }
+            }
+          }
+        } catch (langDetectError) {
+          console.log('Document language detection skipped:', langDetectError);
+        }
+      }
+      else {
+        console.log('Language detection skipped for file type:', fileName);
       }
 
       setFiles(prev => prev.map((f, i) => 
