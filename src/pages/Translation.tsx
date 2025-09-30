@@ -221,62 +221,82 @@ const Translation = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Badge variant="outline">
-                        {sourceLanguage === "english" ? "English" : "മലയാളം"}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">Source</span>
-                    </div>
-                    <Textarea
-                      placeholder={sourceLanguage === "english" 
-                        ? "Enter English text to translate..." 
-                        : "വിവർത്തനം ചെയ്യാൻ മലയാളം ടെക്സ്റ്റ് നൽകുക..."
-                      }
-                      value={sourceText}
-                      onChange={(e) => setSourceText(e.target.value)}
-                      className="min-h-[200px] resize-none"
-                    />
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Badge className="bg-primary/20 text-primary border-primary/30">
-                        {sourceLanguage === "english" ? "മലയാളം" : "English"}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">Translation</span>
-                    </div>
-                    <div className="relative">
-                      <Textarea
-                        placeholder="Translation will appear here..."
-                        value={translatedText}
-                        readOnly
-                        className="min-h-[200px] resize-none bg-muted/30"
-                      />
-                      {translatedText && (
-                        <div className="absolute top-2 right-2 flex space-x-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 w-8 p-0"
-                            onClick={() => copyToClipboard(translatedText)}
-                          >
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 w-8 p-0"
-                            onClick={downloadTranslation}
-                          >
-                            <Download className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                   <div className="space-y-4">
+                     <div className="flex items-center justify-between">
+                       <Badge variant="outline">
+                         {sourceLanguage === "english" ? "English" : "മലയാളം"}
+                       </Badge>
+                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                         <span>
+                           {sourceText.length.toLocaleString()} chars
+                         </span>
+                         <span>•</span>
+                         <span>
+                           {sourceText.trim().split(/\s+/).filter(w => w.length > 0).length.toLocaleString()} words
+                         </span>
+                       </div>
+                     </div>
+                     <Textarea
+                       placeholder={sourceLanguage === "english" 
+                         ? "Enter English text to translate...\n\nSupports long documents, structured text, and bullet points." 
+                         : "വിവർത്തനം ചെയ്യാൻ മലയാളം ടെക്സ്റ്റ് നൽകുക...\n\nനീണ്ട രേഖകൾ, ഘടനാപരമായ വാചകം എന്നിവ പിന്തുണയ്ക്കുന്നു."
+                       }
+                       value={sourceText}
+                       onChange={(e) => setSourceText(e.target.value)}
+                       className="min-h-[400px] resize-y font-mono text-sm"
+                     />
+                   </div>
+                   
+                   <div className="space-y-4">
+                     <div className="flex items-center justify-between">
+                       <Badge className="bg-primary/20 text-primary border-primary/30">
+                         {sourceLanguage === "english" ? "മലയാളം" : "English"}
+                       </Badge>
+                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                         {translatedText && (
+                           <>
+                             <span>
+                               {translatedText.length.toLocaleString()} chars
+                             </span>
+                             <span>•</span>
+                             <span>
+                               {translatedText.trim().split(/\s+/).filter(w => w.length > 0).length.toLocaleString()} words
+                             </span>
+                           </>
+                         )}
+                       </div>
+                     </div>
+                     <div className="relative">
+                       <Textarea
+                         placeholder="Translation will appear here..."
+                         value={translatedText}
+                         readOnly
+                         className="min-h-[400px] resize-y bg-muted/30 font-mono text-sm"
+                       />
+                       {translatedText && (
+                         <div className="absolute top-2 right-2 flex space-x-1">
+                           <Button 
+                             variant="ghost" 
+                             size="sm" 
+                             className="h-8 w-8 p-0"
+                             onClick={() => copyToClipboard(translatedText)}
+                           >
+                             <Copy className="h-3 w-3" />
+                           </Button>
+                           <Button 
+                             variant="ghost" 
+                             size="sm" 
+                             className="h-8 w-8 p-0"
+                             onClick={downloadTranslation}
+                           >
+                             <Download className="h-3 w-3" />
+                           </Button>
+                         </div>
+                       )}
+                     </div>
+                   </div>
+                 </div>
                 
                 <div className="mt-6 flex justify-center">
                   <Button
